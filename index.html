@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>World Cup Fan Zone · powered by TxLINE</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#121822; --panel2:#1a2230; --border:#26303f;
+    --text:#d7e4f0; --muted:#7d8fa3; --blue:#3b82f6; --green:#22c55e;
+    --orange:#f97316; --red:#ef4444; --purple:#8b5cf6; --gold:#fbbf24;
+    --mono:'SF Mono',ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#16203040,transparent),var(--bg);color:var(--text);font:14px/1.5 -apple-system,system-ui,sans-serif;padding:18px;max-width:1180px;margin:0 auto}
+  a{color:var(--blue)}
+  h1{font-size:23px;margin:0 0 2px;letter-spacing:-.3px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:14px}
+  .badges{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 18px}
+  .badge{font-size:11px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--border);background:var(--panel);color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+  .badge .dot{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+  .badge.track{border-color:#8b5cf655;color:#c4b5fd}
+  .badge.tx{border-color:#22c55e55;color:#86efac}
+  .badge.tx .dot{background:var(--green)}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px}
+  h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--orange);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+  h2 .pill{font-size:10px;color:var(--muted);text-transform:none;letter-spacing:0;font-weight:500}
+  button{font-family:inherit;cursor:pointer}
+  .btn{background:var(--green);color:#04210f;border:none;border-radius:9px;padding:9px 16px;font:700 13px inherit}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--border);font-weight:600}
+  .btn.purple{background:var(--purple);color:#fff}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .status{font-size:12px;color:var(--muted)}
+  .note{font-size:11.5px;color:var(--muted);margin-top:12px;line-height:1.55}
+
+  /* connection bar */
+  .connbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between}
+  .connleft{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .statepill{font-size:12px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--border);background:var(--panel2);display:inline-flex;align-items:center;gap:7px}
+  .statepill .dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+  .statepill.live .dot{background:var(--green);box-shadow:0 0 8px var(--green)}
+  select,input{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:7px 9px;font:12px var(--mono)}
+
+  /* ticker */
+  .ticker{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px}
+  .tcard{flex:0 0 auto;min-width:172px;background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:9px 11px}
+  .tcard .tstage{font-size:9px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+  .tcard .trow{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:5px;font-size:13px}
+  .tcard .trow .sc{font-family:var(--mono);font-weight:700}
+  .tcard .win{color:var(--green);font-weight:700}
+  .tcard .vbadge{margin-top:7px;font-size:9.5px;color:#86efac;display:flex;align-items:center;gap:5px}
+  .tcard .vbadge.pending{color:var(--muted)}
+  .tcard .vbadge .dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+  .tcard .vbadge.pending .dot{background:var(--muted)}
+
+  /* fan card */
+  .fangrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px}
+  .stat{background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:12px 14px;text-align:center}
+  .stat .n{font-size:26px;font-weight:800;font-family:var(--mono);letter-spacing:-1px}
+  .stat .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-top:2px}
+  .stat.pts .n{color:var(--gold)}
+  .stat.acc .n{color:var(--green)}
+
+  /* bracket */
+  .kb-outer{overflow-x:auto;padding-bottom:8px}
+  .kb9{display:flex;align-items:stretch;min-width:2160px;gap:8px}
+  .kbcol{display:flex;flex-direction:column;flex-shrink:0;width:238px}
+  .kbcol.cen{width:266px}
+  .kbhdr{font-size:9.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--orange);text-align:center;padding:0 4px 10px;font-weight:700;height:20px}
+  .kbbody{flex:1;display:flex;flex-direction:column;justify-content:space-around;gap:6px}
+  .kbbody.cen{justify-content:center;gap:14px}
+  .kbmatch{background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:6px 7px}
+  .kbmatch.official{border-color:#1f6b3a}
+  .kbtime{font-size:8px;color:var(--muted);text-align:center;margin-bottom:4px;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;justify-content:center;gap:5px;align-items:center}
+  .kbtime .v{color:#86efac}
+  .kbteam{display:flex;align-items:center;gap:6px;padding:4px 5px;border-radius:7px;cursor:pointer;border:1px solid transparent}
+  .kbteam:hover{background:#26303f66}
+  .kbteam.picked{border-color:var(--purple);background:#8b5cf618}
+  .kbteam.official-win{background:#22c55e14}
+  .kbteam.correct{border-color:var(--green)}
+  .kbteam.wrong{opacity:.5}
+  .kbteam.tbd{cursor:default;color:var(--muted)}
+  .kbteam.tbd:hover{background:none}
+  .kbflag{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+  .kbnm{flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .kbsc{font-family:var(--mono);font-size:12px;color:var(--muted);flex-shrink:0}
+  .kbodds{font-family:var(--mono);font-size:10.5px;color:#c4b5fd;flex-shrink:0;min-width:30px;text-align:right}
+  .kbodds.tx{color:#86efac}
+  .kbmark{font-size:12px;flex-shrink:0;width:14px;text-align:center}
+  .kbchamp{text-align:center;padding:12px 8px;background:linear-gradient(160deg,#1a2230,#20182e);border:1px solid var(--gold);border-radius:12px}
+  .kbchamp .trophy{font-size:26px}
+  .kbchamp .clab{font-size:8.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+  .kbchamp .cname{font-size:15px;color:var(--gold);font-weight:800;font-family:var(--mono);margin-top:2px}
+  .kbchamp .csub{font-size:10px;color:var(--muted);margin-top:2px}
+
+  /* collapsible model */
+  details{background:var(--panel);border:1px solid var(--border);border-radius:14px;margin-bottom:16px;padding:0 16px}
+  summary{cursor:pointer;padding:16px 0;font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--orange);font-weight:700;list-style:none}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:'▸ ';color:var(--muted)}
+  details[open] summary::before{content:'▾ '}
+  .scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font:12.5px var(--mono);min-width:560px}
+  th{text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);padding:6px 7px;border-bottom:1px solid var(--border)}
+  td{padding:5px 7px;border-bottom:1px solid var(--border)}
+  td input.px{width:52px;background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 6px;font:12px var(--mono)}
+  .val{color:var(--green);font-weight:700}.over{color:var(--muted)}
+  tr.value-row td:first-child{box-shadow:inset 3px 0 0 var(--green)}
+  .share{background:var(--panel2);border:1px dashed var(--border);border-radius:10px;padding:10px 12px;font:12.5px var(--mono);color:var(--text);margin-top:10px;white-space:pre-wrap}
+  .foot{font-size:11px;color:var(--muted);text-align:center;margin:22px 0 6px;line-height:1.7}
+  .foot b{color:var(--text)}
+</style>
+</head>
+<body>
+  <div id="errBanner" style="display:none;background:#3a1414;border:1px solid var(--red);color:#ffb4b4;border-radius:10px;padding:12px 14px;margin-bottom:14px;font:12px var(--mono);white-space:pre-wrap"></div>
+
+  <h1>⚽ World Cup Fan Zone</h1>
+  <div class="sub">Call the whole knockout bracket, then watch every result get <b>verified live on-chain</b> by TxLINE. Score points, climb your own accuracy, and see which dark horses the model thinks are underpriced.</div>
+  <div class="badges">
+    <span class="badge track"><span class="dot"></span>Consumer &amp; Fan Experiences</span>
+    <span class="badge tx"><span class="dot"></span>Powered by TxLINE on Solana</span>
+    <span class="badge">2026 FIFA World Cup · 104 matches</span>
+  </div>
+
+  <div class="panel">
+    <div class="connbar">
+      <div class="connleft">
+        <span class="statepill" id="statePill"><span class="dot"></span><span id="stateText">Demo mode</span></span>
+        <select id="network" title="Solana network">
+          <option value="devnet">devnet (free SOL)</option>
+          <option value="mainnet">mainnet</option>
+        </select>
+      </div>
+      <div class="row">
+        <button class="btn purple sm" id="goLive" onclick="TXLINE.goLive()">◎ Go live with TxLINE</button>
+        <button class="btn ghost sm" onclick="TXLINE.refresh()">↻ Refresh results</button>
+        <button class="btn ghost sm" onclick="copySample()">⧉ Copy TxLINE sample (all remaining games)</button>
+      </div>
+    </div>
+    <div class="note" id="connNote">Runs in <b>demo mode</b> with the real 2026 results through the <b>quarter-finals</b> (as of Jul 13) so you can try everything instantly — semis and final are yours to call. Click <b>Go live with TxLINE</b> to connect a Solana wallet, subscribe to the free World Cup tier, and pull cryptographically-verified scores straight from the TxLINE feed (real fixtureIds already mapped).</div>
+  </div>
+
+  <div class="panel">
+    <h2>Live scores <span class="pill" id="tickerMeta">verified by TxLINE</span></h2>
+    <div class="ticker" id="ticker"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Your fan card <span class="pill">pick winners below — points bank as results are verified</span></h2>
+    <div class="fangrid" id="fanGrid"></div>
+    <div class="share" id="shareCard"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn sm" onclick="copyShare()">📋 Copy my fan card</button>
+      <button class="btn ghost sm" onclick="resetPicks()">↺ Clear my picks</button>
+      <span class="status" id="copyMsg"></span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Bracket challenge <span class="pill">tap a team to pick it · <span style="color:#86efac">green %</span> = live TxLINE odds · <span style="color:#c4b5fd">purple %</span> = form-adjusted model · ✓ verified locks the real result</span></h2>
+    <div class="kb-outer"><div id="bracket"></div></div>
+    <div class="note">Green-bordered games are <b>verified on-chain by TxLINE</b> and locked to the real score. Your pick shows <b style="color:var(--green)">✓</b> if it matched and fades if it missed. Purple = your call on games not played yet; those carry forward so you can send a team all the way to the trophy.</div>
+  </div>
+
+  <details id="modelBox">
+    <summary>Smart picks — model value &amp; who's underpriced</summary>
+    <div style="padding-bottom:16px">
+      <div class="row" style="margin-bottom:10px">
+        <button class="btn sm" onclick="runModel()">▶ Run model</button>
+        <label class="status"><input type="checkbox" id="useAdj" checked onchange="setAdj(this.checked)"> form-adjusted Elo</label>
+        <label class="status">sims <input id="nSims" class="px" style="width:70px" value="10000"></label>
+        <span class="status" id="modelMeta"></span>
+      </div>
+      <div class="scroll"><table id="modelTable"><thead>
+        <tr><th>Team</th><th>R16</th><th>QF</th><th>SF</th><th>Final</th><th>Title %</th><th>Market % <span id="mktSrc" class="pill">(your prices)</span></th><th>Edge</th></tr>
+      </thead><tbody id="modelBody"><tr><td colspan="8" class="status">Hit Run model.</td></tr></tbody></table></div>
+      <div class="note">Model plays the remaining bracket forward thousands of times from the verified results, then compares its title odds to the <b>market</b>. Green = the model likes a team more than the market price → possible value. When you're live, the market column uses <b>TxLINE odds</b>; otherwise it uses the editable prices below.</div>
+      <div class="scroll" style="margin-top:12px"><table id="priceTable"><thead>
+        <tr><th>Team</th><th>Elo</th><th>Market price ¢</th></tr>
+      </thead><tbody id="priceBody"></tbody></table></div>
+    </div>
+  </details>
+
+  <div class="foot">
+    <b>How TxLINE powers this</b> — fixtures, live scores and odds come from the TxLINE World Cup feed; every packet is timestamped on <b>Solana</b> for a tamper-evident audit trail, so a result can't be faked. TxLINE is the primary data input for verification, result-locking, and the market line.<br>
+    Built for the <b>TxODDS × Solana World Cup Hackathon</b> · Consumer &amp; Fan Experiences track · not affiliated with FIFA.
+  </div>
+
+<script>
+window.onerror=function(m,s,l){var b=document.getElementById('errBanner');if(b){b.style.display='block';b.textContent='⚠ '+m+' (line '+l+')';}return false;};
+</script>
+<script>
+/* ============================ DATA ============================ */
+const FLAG={'Germany':'🇩🇪','Paraguay':'🇵🇾','France':'🇫🇷','Sweden':'🇸🇪','South Africa':'🇿🇦','Canada':'🇨🇦',
+ 'Netherlands':'🇳🇱','Morocco':'🇲🇦','Portugal':'🇵🇹','Croatia':'🇭🇷','Spain':'🇪🇸','Austria':'🇦🇹',
+ 'United States':'🇺🇸','Bosnia-Herzegovina':'🇧🇦','Belgium':'🇧🇪','Senegal':'🇸🇳','Brazil':'🇧🇷','Japan':'🇯🇵',
+ "Côte d'Ivoire":'🇨🇮','Norway':'🇳🇴','Mexico':'🇲🇽','Ecuador':'🇪🇨','England':'🏴󠁧󠁢󠁥󠁮󠁧󠁿','Congo DR':'🇨🇩',
+ 'Argentina':'🇦🇷','Cabo Verde':'🇨🇻','Australia':'🇦🇺','Egypt':'🇪🇬','Switzerland':'🇨🇭','Algeria':'🇩🇿','Colombia':'🇨🇴','Ghana':'🇬🇭'};
+
+// Elo + market price (title ¢) for the 32 knockout teams
+const TEAMS=[
+ ['France',2050,18.5],['Spain',2040,13.6],['England',1980,13.1],['Argentina',2020,11.6],['Portugal',1970,8.4],
+ ['Brazil',1990,6.7],['Germany',1930,5.9],['Netherlands',1900,4.5],['United States',1770,3.6],['Norway',1800,2.7],
+ ['Morocco',1860,2.2],['Belgium',1830,1.9],['Colombia',1840,1.9],['Mexico',1720,1.9],['Japan',1820,1.6],
+ ['Switzerland',1800,1.1],['Croatia',1820,0.7],['Senegal',1810,0.6],['Canada',1720,0.5],["Côte d'Ivoire",1740,0.5],
+ ['Ecuador',1780,0.5],['Sweden',1770,0.5],['Australia',1700,0.4],['Austria',1790,0.4],['Egypt',1700,0.3],
+ ['Ghana',1700,0.3],['Algeria',1730,0.2],['Congo DR',1680,0.2],['Bosnia-Herzegovina',1720,0.1],['Cabo Verde',1620,0.1],
+ ['Paraguay',1720,0.1],['South Africa',1660,0.1]
+].map(t=>({name:t[0],elo:t[1],px:t[2]}));
+
+// Starting Elo for ALL 48 teams (pre-tournament). Used as the baseline for the form-adjusted model.
+const ELO0={
+ 'France':2050,'Spain':2040,'England':1980,'Argentina':2020,'Portugal':1970,'Brazil':1990,'Germany':1930,'Netherlands':1900,
+ 'United States':1770,'Norway':1800,'Morocco':1860,'Belgium':1830,'Colombia':1840,'Mexico':1720,'Japan':1820,'Switzerland':1800,
+ 'Croatia':1820,'Uruguay':1880,'Senegal':1810,'Canada':1720,"Côte d'Ivoire":1740,'Ecuador':1780,'Sweden':1770,'Türkiye':1780,
+ 'Australia':1700,'Austria':1790,'Czechia':1760,'Egypt':1700,'Ghana':1700,'South Korea':1740,'Scotland':1740,'Algeria':1730,
+ 'Congo DR':1680,'Iraq':1600,'Bosnia-Herzegovina':1720,'Cabo Verde':1620,'Curaçao':1560,'Haiti':1560,'Iran':1780,'Jordan':1620,
+ 'Saudi Arabia':1650,'New Zealand':1560,'Panama':1640,'Paraguay':1720,'Qatar':1650,'South Africa':1660,'Tunisia':1690,'Uzbekistan':1640};
+
+// All 72 group-stage results [home, away, homeGoals, awayGoals] in matchday order.
+const GROUP_GAMES=[
+['Mexico','South Africa',2,0],['South Korea','Czechia',2,1],['Canada','Bosnia-Herzegovina',1,1],['United States','Paraguay',4,1],
+['Qatar','Switzerland',1,1],['Brazil','Morocco',1,1],['Haiti','Scotland',0,1],['Australia','Türkiye',2,0],['Germany','Curaçao',7,1],
+["Côte d'Ivoire",'Ecuador',1,0],['Netherlands','Japan',2,2],['Sweden','Tunisia',5,1],['Belgium','Egypt',1,1],['Iran','New Zealand',2,2],
+['Spain','Cabo Verde',0,0],['Saudi Arabia','Uruguay',1,1],['France','Senegal',3,1],['Iraq','Norway',1,4],['Argentina','Algeria',3,0],
+['Austria','Jordan',3,1],['Portugal','Congo DR',1,1],['Uzbekistan','Colombia',1,3],['England','Croatia',4,2],['Ghana','Panama',1,0],
+['Czechia','South Africa',1,1],['Mexico','South Korea',1,0],['Switzerland','Bosnia-Herzegovina',4,1],['Canada','Qatar',6,0],
+['Scotland','Morocco',0,1],['Brazil','Haiti',3,0],['United States','Australia',2,0],['Türkiye','Paraguay',0,1],['Germany',"Côte d'Ivoire",2,1],
+['Ecuador','Curaçao',0,0],['Netherlands','Sweden',5,1],['Tunisia','Japan',0,4],['Belgium','Iran',0,0],['New Zealand','Egypt',1,3],
+['Spain','Saudi Arabia',4,0],['Uruguay','Cabo Verde',2,2],['France','Iraq',3,0],['Norway','Senegal',3,2],['Argentina','Austria',2,0],
+['Jordan','Algeria',1,2],['Portugal','Uzbekistan',5,0],['Colombia','Congo DR',1,0],['England','Ghana',0,0],['Panama','Croatia',0,1],
+['Czechia','Mexico',0,3],['South Africa','South Korea',1,0],['Switzerland','Canada',2,1],['Bosnia-Herzegovina','Qatar',3,1],
+['Scotland','Brazil',0,3],['Morocco','Haiti',4,2],['Türkiye','United States',3,2],['Paraguay','Australia',0,0],['Curaçao',"Côte d'Ivoire",0,2],
+['Ecuador','Germany',2,1],['Japan','Sweden',1,1],['Tunisia','Netherlands',1,3],['Egypt','Iran',1,1],['New Zealand','Belgium',1,5],
+['Cabo Verde','Saudi Arabia',0,0],['Uruguay','Spain',0,1],['Norway','France',1,4],['Senegal','Iraq',5,0],['Algeria','Austria',3,3],
+['Jordan','Argentina',1,3],['Colombia','Portugal',0,0],['Congo DR','Uzbekistan',3,1],['Panama','England',0,2],['Croatia','Ghana',2,1]];
+
+// World Football Elo update over every played game (group + knockout). K=60 (World Cup),
+// neutral venues (no home bonus), goal-difference weighting, shootouts count as draws.
+let USE_ADJ=true, ADJ_CACHE=null;
+function computeAdjustedElo(){
+ var E={}; Object.keys(ELO0).forEach(function(k){E[k]=ELO0[k];});
+ function upd(a,b,ga,gb,so){ if(E[a]==null)E[a]=1500; if(E[b]==null)E[b]=1500;
+   var W=so?0.5:(ga>gb?1:(ga<gb?0:0.5)), gd=so?0:Math.abs(ga-gb), Gi=gd<=1?1:(gd===2?1.5:(11+gd)/8);
+   var We=1/(1+Math.pow(10,-(E[a]-E[b])/400)), d=60*Gi*(W-We); E[a]+=d; E[b]-=d; }
+ GROUP_GAMES.forEach(function(g){ upd(g[0],g[1],g[2],g[3],false); });
+ ['M73','M74','M75','M76','M77','M78','M79','M80','M81','M82','M83','M84','M85','M86','M87','M88',
+  'M89','M90','M91','M92','M93','M94','M95','M96','M97','M98','M99','M100','M101','M102','M104'].forEach(function(id){
+   var s=OFFICIAL[id]; if(!s||s.ga==null||s.gb==null)return;
+   var a=resolveOff(BR[id].a), b=resolveOff(BR[id].b); if(!a||!b)return;
+   upd(a,b,s.ga,s.gb,(s.ga===s.gb)); // knockout draw => decided on pens => counts as a draw for Elo
+ });
+ return E;
+}
+function elo(n){
+ if(USE_ADJ){ if(!ADJ_CACHE)ADJ_CACHE=computeAdjustedElo(); return ADJ_CACHE[n]!=null?ADJ_CACHE[n]:1500; }
+ return ELO0[n]!=null?ELO0[n]:1500;
+}
+function setAdj(v){ USE_ADJ=v; ADJ_CACHE=null; buildPriceTable(); renderBracket(); if(document.getElementById('modelBox').open)runModel(); }
+
+// Bracket structure (FIFA match numbers). a/b = literal team (R32) or 'W<match>'/'L<match>'.
+const BR={
+ M73:{a:'South Africa',b:'Canada',t:'R32 · Jun 28'}, M74:{a:'Germany',b:'Paraguay',t:'R32 · Jun 29'},
+ M75:{a:'Netherlands',b:'Morocco',t:'R32 · Jun 29'}, M76:{a:'Brazil',b:'Japan',t:'R32 · Jun 29'},
+ M77:{a:'France',b:'Sweden',t:'R32 · Jun 30'}, M78:{a:"Côte d'Ivoire",b:'Norway',t:'R32 · Jun 30'},
+ M79:{a:'Mexico',b:'Ecuador',t:'R32 · Jun 30'}, M80:{a:'England',b:'Congo DR',t:'R32 · Jul 1'},
+ M81:{a:'United States',b:'Bosnia-Herzegovina',t:'R32 · Jul 1'}, M82:{a:'Belgium',b:'Senegal',t:'R32 · Jul 1'},
+ M83:{a:'Portugal',b:'Croatia',t:'R32 · Jul 2'}, M84:{a:'Spain',b:'Austria',t:'R32 · Jul 2'},
+ M85:{a:'Switzerland',b:'Algeria',t:'R32 · Jul 2'}, M86:{a:'Argentina',b:'Cabo Verde',t:'R32 · Jul 3'},
+ M87:{a:'Colombia',b:'Ghana',t:'R32 · Jul 3'}, M88:{a:'Australia',b:'Egypt',t:'R32 · Jul 3'},
+ M89:{a:'W74',b:'W77',t:'R16 · Jul 4'}, M90:{a:'W73',b:'W75',t:'R16 · Jul 4'},
+ M91:{a:'W76',b:'W78',t:'R16 · Jul 5'}, M92:{a:'W79',b:'W80',t:'R16 · Jul 5'},
+ M93:{a:'W83',b:'W84',t:'R16 · Jul 6'}, M94:{a:'W81',b:'W82',t:'R16 · Jul 6'},
+ M95:{a:'W86',b:'W88',t:'R16 · Jul 7'}, M96:{a:'W85',b:'W87',t:'R16 · Jul 7'},
+ M97:{a:'W89',b:'W90',t:'QF · Jul 9'}, M98:{a:'W93',b:'W94',t:'QF · Jul 10'},
+ M99:{a:'W91',b:'W92',t:'QF · Jul 11'}, M100:{a:'W95',b:'W96',t:'QF · Jul 11'},
+ M101:{a:'W97',b:'W98',t:'SF · Jul 14'}, M102:{a:'W99',b:'W100',t:'SF · Jul 15'},
+ M103:{a:'L101',b:'L102',t:'3rd · Jul 18'}, M104:{a:'W101',b:'W102',t:'Final · Jul 19'}
+};
+const R32=['M73','M74','M75','M76','M77','M78','M79','M80','M81','M82','M83','M84','M85','M86','M87','M88'];
+const R16=['M89','M90','M91','M92','M93','M94','M95','M96'];
+const QF=['M97','M98','M99','M100'], SF=['M101','M102'], FIN=['M104'];
+const ROUNDPTS={R32:1,R16:2,QF:3,SF:5,Final:8};
+function roundOf(id){ if(R32.includes(id))return'R32'; if(R16.includes(id))return'R16'; if(QF.includes(id))return'QF'; if(SF.includes(id))return'SF'; if(id==='M104')return'Final'; return'3rd'; }
+
+// OFFICIAL = TxLINE-verified real results (demo seed = actual 2026 scores through R16, as of Jul 6).
+const OFFICIAL_SEED={
+ // Round of 32
+ M73:{ga:0,gb:1},M74:{ga:1,gb:1,pa:3,pb:4},M75:{ga:1,gb:1,pa:2,pb:3},M76:{ga:2,gb:1},M77:{ga:3,gb:0},
+ M78:{ga:1,gb:2},M79:{ga:2,gb:0},M80:{ga:2,gb:1},M81:{ga:2,gb:0},M82:{ga:3,gb:2},M83:{ga:2,gb:1},
+ M84:{ga:3,gb:0},M85:{ga:2,gb:0},M86:{ga:3,gb:2},M87:{ga:1,gb:0},M88:{ga:1,gb:1,pa:2,pb:4},
+ // Round of 16
+ M89:{ga:0,gb:1},M90:{ga:0,gb:3},M91:{ga:1,gb:2},M92:{ga:2,gb:3},M93:{ga:0,gb:1},
+ M94:{ga:1,gb:4},M95:{ga:3,gb:2},M96:{ga:0,gb:0,pa:4,pb:3},
+ // Quarter-finals (as of Jul 13, 2026)
+ M97:{ga:2,gb:0},M98:{ga:2,gb:1},M99:{ga:1,gb:2},M100:{ga:3,gb:1}
+};
+// Real TxLINE fixtureIds (from the TxLINE World Cup schedule feed) -> our FIFA match numbers.
+// Used in live mode to fetch /api/scores/snapshot/{fixtureId} and verify results on-chain.
+const FIXID={
+ M73:18167317,M74:18175983,M75:18172260,M76:18172489,M77:18175981,M78:18175397,M79:18179759,M80:18179764,
+ M81:18172379,M82:18179550,M83:18179763,M84:18179551,M85:18179552,M86:18175918,M87:18179549,M88:18176123,
+ M89:18188721,M90:18185036,M91:18187298,M92:18192996,M93:18198205,M94:18193785,M95:18202701,M96:18202783,
+ M97:18209181,M98:18218149,M99:18213979,M100:18222446,M101:18237038,M102:18241006
+};
+let OFFICIAL={};        // verified results currently loaded (from TxLINE or demo seed)
+let PICKS={};           // user's predicted winner per match id -> team name
+let MKT_TX=null;        // TxLINE outright odds (title %) keyed by team, when live
+let MKT_MATCH={};       // TxLINE per-match advance probs: matchId -> {a,b}, when live
+
+/* ============================ MODEL ============================ */
+function poisson(l){var L=Math.exp(-l),k=0,p=1;do{k++;p*=Math.random();}while(p>L);return k-1;}
+function goals(eA,eB){var s=(eA-eB)/420;return[poisson(Math.max(0.2,(2.6+s)/2)),poisson(Math.max(0.2,(2.6-s)/2))];}
+function pen(eA,eB){return Math.random()<1/(1+Math.pow(10,-(eA-eB)/400));}
+
+/* ===================== RESULT RESOLUTION ===================== */
+function resolveOff(slot){ if(slot==null)return null; var c=slot[0];
+ if(c==='W')return offWinner('M'+slot.slice(1)); if(c==='L')return offLoser('M'+slot.slice(1)); return slot; }
+function offWinner(id){ var m=BR[id]; if(!m)return null; var a=resolveOff(m.a),b=resolveOff(m.b),s=OFFICIAL[id];
+ if(a==null||b==null||!s||s.ga==null||s.gb==null)return null;
+ if(s.ga>s.gb)return a; if(s.gb>s.ga)return b;
+ if(s.pa!=null&&s.pb!=null){ if(s.pa>s.pb)return a; if(s.pb>s.pa)return b; } return null; }
+function offLoser(id){ var w=offWinner(id); if(w==null)return null; var m=BR[id],a=resolveOff(m.a),b=resolveOff(m.b); return w===a?b:a; }
+
+// pick-aware resolution: use official winner if verified, else the user's pick, to carry teams forward.
+function pickWinner(id){ var o=offWinner(id); if(o)return o; return PICKS[id]||null; }
+// Per-match win chance for the two current teams: TxLINE odds when live, else Elo expectancy.
+function matchProb(id){ var m=BR[id],a=slotTeam(m.a),b=slotTeam(m.b); if(!a||!b)return null;
+ if(MKT_MATCH[id]&&MKT_MATCH[id].a!=null)return MKT_MATCH[id];
+ var pa=1/(1+Math.pow(10,-(elo(a)-elo(b))/400)); return {a:pa,b:1-pa}; }
+function slotTeam(slot){ if(slot==null)return null; var c=slot[0];
+ if(c==='W')return pickWinner('M'+slot.slice(1)); if(c==='L'){var w=pickWinner('M'+slot.slice(1)); if(!w)return null; var m=BR['M'+slot.slice(1)]; var a=slotTeam(m.a),b=slotTeam(m.b); return w===a?b:a;} return slot; }
+
+/* ===================== SCORING (fan card) ===================== */
+function scorePicks(){
+ var pts=0,correct=0,decided=0,best=null,bestPts=0;
+ Object.keys(BR).forEach(function(id){
+   if(id==='M103')return; var w=offWinner(id); if(!w)return; // only verified games count
+   var pick=PICKS[id]; if(pick==null)return; decided++;
+   if(pick===w){ var p=ROUNDPTS[roundOf(id)]||1; pts+=p; correct++; if(p>=bestPts){bestPts=p;best={team:w,round:roundOf(id)};} }
+ });
+ return {pts:pts,correct:correct,decided:decided,best:best};
+}
+
+/* ============================ RENDER ============================ */
+function teamRow(id,side){
+ var m=BR[id], slot=side==='a'?m.a:m.b, name=slotTeam(slot);
+ var disp=name||slot, s=OFFICIAL[id]||{}, off=offWinner(id);
+ var g=side==='a'?s.ga:s.gb, isOffWin=off!=null&&name===off, pick=PICKS[id];
+ var cls='kbteam';
+ if(!name)cls+=' tbd';
+ if(pick&&pick===name)cls+=' picked';
+ if(isOffWin)cls+=' official-win';
+ var mark='';
+ if(off!=null&&pick){ if(pick===name){ mark = (name===off)?'<span class="kbmark" style="color:var(--green)">✓</span>':'<span class="kbmark" style="color:var(--red)">✗</span>'; } }
+ if(off!=null&&pick===name&&name!==off)cls+=' wrong';
+ if(off!=null&&pick===off&&name===off)cls+=' correct';
+ var sc;
+ if(g!=null){ sc='<span class="kbsc">'+g+((side==='a'?s.pa:s.pb)!=null?' ('+(side==='a'?s.pa:s.pb)+')':'')+'</span>'; }
+ else { var mp=(off==null)?matchProb(id):null; var tx=!!(MKT_MATCH[id]&&MKT_MATCH[id].a!=null);
+   sc = mp?('<span class="kbodds'+(tx?' tx':'')+'" title="'+(tx?'live TxLINE odds':'form-adjusted model')+'">'+Math.round((side==='a'?mp.a:mp.b)*100)+'%</span>'):''; }
+ var click = name && off==null ? ' onclick="pick(\''+id+'\',\''+(name||'').replace(/'/g,"\\'")+'\')"' : '';
+ return '<div class="'+cls+'"'+click+'>'+
+   '<span class="kbflag">'+(name?(FLAG[name]||''):'')+'</span>'+
+   '<span class="kbnm">'+disp+'</span>'+sc+(mark||'<span class="kbmark"></span>')+'</div>';
+}
+function mcard(id){
+ var off=offWinner(id)!=null;
+ var vb = off?'<span class="v">✓ TxLINE-verified</span>':'';
+ return '<div class="kbmatch'+(off?' official':'')+'">'+
+   '<div class="kbtime"><span>'+BR[id].t+'</span>'+vb+'</div>'+teamRow(id,'a')+teamRow(id,'b')+'</div>';
+}
+function col(h,ids){return '<div class="kbcol"><div class="kbhdr">'+h+'</div><div class="kbbody">'+ids.map(mcard).join('')+'</div></div>';}
+function renderBracket(){
+ var champ=pickWinner('M104'), champOff=offWinner('M104');
+ var cName=champ?((FLAG[champ]||'')+' '+champ):'—';
+ var csub=champOff?'✓ verified champion':(champ?'your pick':'pick your winner');
+ var center='<div class="kbcol cen"><div class="kbhdr">Final</div><div class="kbbody cen">'+
+   '<div class="kbchamp"><div class="trophy">🏆</div><div class="clab">Champion</div><div class="cname">'+cName+'</div><div class="csub">'+csub+'</div></div>'+
+   mcard('M104')+'<div class="kbhdr" style="margin-top:6px">3rd place</div>'+mcard('M103')+'</div></div>';
+ document.getElementById('bracket').innerHTML='<div class="kb9">'+
+   col('Round of 32',['M74','M77','M73','M75','M83','M84','M81','M82'])+
+   col('Round of 16',['M89','M90','M93','M94'])+col('Quarter-final',['M97','M98'])+col('Semi-final',['M101'])+
+   center+
+   col('Semi-final',['M102'])+col('Quarter-final',['M99','M100'])+
+   col('Round of 16',['M91','M92','M95','M96'])+
+   col('Round of 32',['M76','M78','M79','M80','M86','M88','M85','M87'])+'</div>';
+}
+function renderTicker(){
+ var ids=Object.keys(BR).filter(function(id){return id!=='M103'&&offWinner(id);});
+ // sort by match number desc (most recent first)
+ ids.sort(function(a,b){return (+b.slice(1))-(+a.slice(1));});
+ var html=ids.slice(0,12).map(function(id){
+   var m=BR[id],s=OFFICIAL[id],a=resolveOff(m.a),b=resolveOff(m.b),w=offWinner(id);
+   var pens=(s.pa!=null&&s.pb!=null)?' <span class="over">('+s.pa+'-'+s.pb+' pens)</span>':'';
+   var stage=BR[id].t.split(' · ')[0];
+   return '<div class="tcard"><div class="tstage">'+stage+' · '+id+'</div>'+
+     '<div class="trow"><span class="'+(w===a?'win':'')+'">'+(FLAG[a]||'')+' '+shortName(a)+'</span><span class="sc">'+s.ga+'</span></div>'+
+     '<div class="trow"><span class="'+(w===b?'win':'')+'">'+(FLAG[b]||'')+' '+shortName(b)+'</span><span class="sc">'+s.gb+'</span></div>'+pens+
+     '<div class="vbadge"><span class="dot"></span>Verified on-chain</div></div>';
+ }).join('');
+ if(!html) html='<div class="status">No verified results yet — connect TxLINE or load the demo.</div>';
+ document.getElementById('ticker').innerHTML=html;
+}
+function shortName(n){return n&&n.length>13?n.slice(0,12)+'…':n;}
+function renderFan(){
+ var sc=scorePicks();
+ var acc=sc.decided?Math.round(sc.correct/sc.decided*100):0;
+ var alive=aliveTeams().length;
+ document.getElementById('fanGrid').innerHTML=
+   '<div class="stat pts"><div class="n">'+sc.pts+'</div><div class="l">Points</div></div>'+
+   '<div class="stat acc"><div class="n">'+acc+'%</div><div class="l">Accuracy</div></div>'+
+   '<div class="stat"><div class="n">'+sc.correct+'/'+sc.decided+'</div><div class="l">Correct picks</div></div>'+
+   '<div class="stat"><div class="n">'+alive+'</div><div class="l">Teams alive</div></div>';
+ var champ=PICKS['M104'];
+ var share='🏆 My World Cup Fan Zone card\n'+
+   'Points: '+sc.pts+'   Accuracy: '+acc+'% ('+sc.correct+'/'+sc.decided+')\n'+
+   (champ?('My champion pick: '+(FLAG[champ]||'')+' '+champ+'\n'):'')+
+   (sc.best?('Best call: '+(FLAG[sc.best.team]||'')+' '+sc.best.team+' ('+sc.best.round+')\n'):'')+
+   'Results verified on-chain by TxLINE ◎ #WorldCupFanZone';
+ document.getElementById('shareCard').textContent=share;
+}
+function renderAll(){ renderTicker(); renderBracket(); renderFan(); }
+
+/* ============================ ACTIONS ============================ */
+function pick(id,team){ PICKS[id]=team; save(); renderBracket(); renderFan(); }
+function resetPicks(){ PICKS={}; save(); renderAll(); }
+function copyShare(){ var t=document.getElementById('shareCard').textContent;
+ navigator.clipboard&&navigator.clipboard.writeText(t); var m=document.getElementById('copyMsg'); m.textContent='Copied!'; setTimeout(function(){m.textContent='';},1500); }
+
+/* ============================ MODEL ============================ */
+function aliveTeams(){ var all=R32.flatMap(function(id){return[BR[id].a,BR[id].b];});
+ var el=new Set(); Object.keys(BR).forEach(function(id){var l=offLoser(id); if(l)el.add(l);});
+ return all.filter(function(n){return!el.has(n);}); }
+function simForward(N){
+ var c={r16:{},qf:{},sf:{},fin:{},title:{}};
+ for(var i=0;i<N;i++){ var cache={};
+   var win=function(id){ if(cache[id])return cache[id]; var m=BR[id],s=OFFICIAL[id];
+     var a=(m.a[0]==='W')?win('M'+m.a.slice(1)):m.a, b=(m.b[0]==='W')?win('M'+m.b.slice(1)):m.b, w;
+     if(s&&s.ga!=null&&s.gb!=null){ if(s.ga>s.gb)w=a; else if(s.gb>s.ga)w=b; else w=(s.pa!=null&&s.pb!=null)?(s.pa>s.pb?a:b):(pen(elo(a),elo(b))?a:b); }
+     else{ var gg=goals(elo(a),elo(b)); w=gg[0]>gg[1]?a:gg[1]>gg[0]?b:(pen(elo(a),elo(b))?a:b); }
+     cache[id]=w; return w; };
+   R32.forEach(function(id){var w=win(id);c.r16[w]=(c.r16[w]||0)+1;});
+   R16.forEach(function(id){var w=win(id);c.qf[w]=(c.qf[w]||0)+1;});
+   QF.forEach(function(id){var w=win(id);c.sf[w]=(c.sf[w]||0)+1;});
+   SF.forEach(function(id){var w=win(id);c.fin[w]=(c.fin[w]||0)+1;});
+   FIN.forEach(function(id){var w=win(id);c.title[w]=(c.title[w]||0)+1;});
+ }
+ return c;
+}
+// Market-implied title odds: winners drawn from TxLINE per-match probabilities (else Elo).
+function simMarket(N){
+ var title={};
+ for(var i=0;i<N;i++){ var cache={};
+   var win=function(id){ if(cache[id])return cache[id]; var m=BR[id],s=OFFICIAL[id];
+     var a=(m.a[0]==='W')?win('M'+m.a.slice(1)):m.a, b=(m.b[0]==='W')?win('M'+m.b.slice(1)):m.b, w;
+     if(s&&s.ga!=null&&s.gb!=null){ if(s.ga>s.gb)w=a; else if(s.gb>s.ga)w=b; else w=(s.pa!=null&&s.pb!=null)?(s.pa>s.pb?a:b):(pen(elo(a),elo(b))?a:b); }
+     else { var mp=MKT_MATCH[id], pa=(mp&&mp.a!=null)?mp.a:1/(1+Math.pow(10,-(elo(a)-elo(b))/400)); w=(Math.random()<pa)?a:b; }
+     cache[id]=w; return w; };
+   FIN.forEach(function(id){var w=win(id);title[w]=(title[w]||0)+1;});
+ }
+ return title;
+}
+function runModel(){
+ var N=Math.max(1000,Math.min(50000,parseInt(document.getElementById('nSims').value)||10000));
+ var t0=Date.now(), c=simForward(N), alive=aliveTeams();
+ // market: TxLINE outright odds > TxLINE per-match odds (propagated) > editable prices
+ var pxSum, mkt={};
+ if(MKT_TX){ var s=alive.reduce(function(a,n){return a+(MKT_TX[n]||0);},0)||1; alive.forEach(function(n){mkt[n]=(MKT_TX[n]||0)/s*100;}); document.getElementById('mktSrc').textContent='(TxLINE odds)'; }
+ else if(Object.keys(MKT_MATCH).length){ var mt=simMarket(N), s2=alive.reduce(function(a,n){return a+(mt[n]||0);},0)||1; alive.forEach(function(n){mkt[n]=(mt[n]||0)/s2*100;}); document.getElementById('mktSrc').textContent='(TxLINE odds)'; }
+ else { pxSum=alive.reduce(function(a,n){var t=TEAMS.find(x=>x.name===n);return a+(t?+t.px:0);},0)||1; alive.forEach(function(n){var t=TEAMS.find(x=>x.name===n);mkt[n]=(t?+t.px:0)/pxSum*100;}); document.getElementById('mktSrc').textContent='(your prices)'; }
+ var rows=alive.map(function(n){ var title=(c.title[n]||0)/N*100;
+   return {name:n,r16:(c.r16[n]||0)/N*100,qf:(c.qf[n]||0)/N*100,sf:(c.sf[n]||0)/N*100,final:(c.fin[n]||0)/N*100,title:title,mkt:mkt[n]||0,edge:title-(mkt[n]||0)};
+ }).sort(function(a,b){return b.title-a.title;});
+ var f1=v=>v.toFixed(1)+'%',f2=v=>v.toFixed(2)+'%',cell=v=>v>0.05?f1(v):'<span class="over">—</span>';
+ document.getElementById('modelBody').innerHTML=rows.map(function(r){var val=r.edge>0.3;
+   return '<tr class="'+(val?'value-row':'')+'"><td>'+(FLAG[r.name]||'')+' '+r.name+'</td>'+
+   '<td>'+cell(r.r16)+'</td><td>'+cell(r.qf)+'</td><td>'+cell(r.sf)+'</td><td>'+cell(r.final)+'</td>'+
+   '<td>'+f2(r.title)+'</td><td class="'+(val?'':'over')+'">'+f2(r.mkt)+'</td>'+
+   '<td class="'+(val?'val':'over')+'">'+(r.edge>0?'+':'')+f2(r.edge)+'</td></tr>';
+ }).join('')||'<tr><td colspan="8" class="status">No teams remaining.</td></tr>';
+ document.getElementById('modelMeta').textContent=rows.length+' alive · '+N.toLocaleString()+' sims · '+(Date.now()-t0)+'ms';
+}
+function buildPriceTable(){
+ document.getElementById('priceBody').innerHTML=TEAMS.slice().sort((a,b)=>b.elo-a.elo).map(function(t){
+   var i=TEAMS.indexOf(t);
+   return '<tr><td>'+(FLAG[t.name]||'')+' '+t.name+'</td><td>'+Math.round(elo(t.name))+'</td>'+
+   '<td><input class="px" value="'+t.px+'" oninput="TEAMS['+i+'].px=parseFloat(this.value)||0;save()"></td></tr>';
+ }).join('');
+}
+
+/* ============================ PERSISTENCE ============================ */
+function stateObj(){ return {picks:PICKS, px:TEAMS.map(t=>t.px)}; } // results are NOT persisted (seed + live only)
+function save(){ var j; try{j=JSON.stringify(stateObj());}catch(e){return;}
+ try{localStorage.setItem('wcfz',j);}catch(e){}
+ try{history.replaceState(null,'','#'+encodeURIComponent(j));}catch(e){} }
+function load(){ var s=null;
+ try{if(location.hash&&location.hash.length>1)s=decodeURIComponent(location.hash.slice(1));}catch(e){}
+ if(!s){try{s=localStorage.getItem('wcfz');}catch(e){}}
+ if(!s)return; var o; try{o=JSON.parse(s);}catch(e){return;}
+ if(o.picks)PICKS=o.picks;
+ if(o.px)o.px.forEach(function(p,i){if(TEAMS[i])TEAMS[i].px=p;});
+}
+
+/* ============================ INIT ============================ */
+function init(){
+ try{
+   load();
+   OFFICIAL=JSON.parse(JSON.stringify(OFFICIAL_SEED)); // always start from the correct baseline
+   buildPriceTable(); renderAll();
+ }catch(e){ if(window.onerror)window.onerror('init: '+e.message,'',0); }
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init); else init();
+</script>
+
+<!-- ===================== TxLINE integration (loads on demand) ===================== -->
+<script>
+/* TXLINE: World Cup free-tier flow — Phantom wallet -> on-chain subscribe -> activate -> fetch data.
+   Docs: https://txline.txodds.com/documentation/worldcup . Falls back to demo seed when not live. */
+const TXLINE=(function(){
+ const NET={
+   devnet:{rpc:'https://api.devnet.solana.com',apiOrigin:'https://txline-dev.txodds.com',
+     programId:'6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J',mint:'4Zao8ocPhmMgq7PdsYWyxvqySMGx7xb9cMftPMkEokRG',service:1},
+   mainnet:{rpc:'https://api.mainnet-beta.solana.com',apiOrigin:'https://txline.txodds.com',
+     programId:'9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA',mint:'Zhw9TVKp68a1QrftncMSd6ELXKDtpVMNuMGr1jNwdeL',service:12}
+ };
+ let creds=null; // {jwt, apiToken, apiBase}
+ function net(){ return NET[document.getElementById('network').value]||NET.devnet; }
+ function setState(txt,live){ document.getElementById('stateText').textContent=txt;
+   document.getElementById('statePill').classList.toggle('live',!!live);
+   document.getElementById('tickerMeta').textContent=live?'✓ live from TxLINE feed':'verified by TxLINE (demo results)'; }
+ function note(msg){ document.getElementById('connNote').innerHTML=msg; }
+
+ function detectProvider(){
+   if(window.phantom&&window.phantom.solana&&window.phantom.solana.isPhantom)return window.phantom.solana;
+   if(window.solana&&(window.solana.isPhantom||window.solana.signTransaction))return window.solana;
+   return null;
+ }
+ async function goLive(){
+   try{
+     const cfg=net();
+     setState('Connecting…',false);
+     note('Looking for your wallet…');
+     // Wallet extensions inject a provider object; give it a moment in case it's slow to appear.
+     let provider=detectProvider();
+     for(let i=0;i<8&&!provider;i++){ await new Promise(r=>setTimeout(r,150)); provider=detectProvider(); }
+     if(!provider){
+       if(location.protocol==='file:'){
+         note('⚠ A wallet can\'t connect on a <code>file://</code> page — browsers block extensions from injecting there (that\'s why it says no wallet, even though Phantom is installed). Serve the app over localhost instead:<br>• Easiest: double-click <b>Run-FanZone.command</b> in this folder.<br>• Or in Terminal: <code>cd</code> to this folder, run <code>python3 -m http.server 8765</code>, then open <a href="http://localhost:8765/WorldCup-FanZone.html">http://localhost:8765/WorldCup-FanZone.html</a> and click Go live.');
+       } else {
+         note('No Solana wallet detected. Make sure Phantom is installed, unlocked, and enabled for this site, then click Go live again. Demo mode keeps working meanwhile.');
+       }
+       setState('Demo mode',false); return;
+     }
+     note('Wallet found — loading Solana libraries…');
+     const web3=await import('https://esm.sh/@solana/web3.js@1.95.3');
+     const anchor=await import('https://esm.sh/@coral-xyz/anchor@0.30.1');
+     const resp=await provider.connect();
+     const pubkey=resp.publicKey.toString();
+     setState('Wallet '+pubkey.slice(0,4)+'…'+pubkey.slice(-4),false);
+     note('Wallet connected on <b>'+document.getElementById('network').value+'</b>. Subscribing to the free World Cup tier (needs a little SOL for the on-chain fee)…');
+
+     const connection=new web3.Connection(cfg.rpc,'confirmed');
+     // Free tier still needs a little SOL for the network fee + account rent. Check before signing.
+     var bal=0; try{ bal=await connection.getBalance(resp.publicKey); }catch(e){}
+     const netName=document.getElementById('network').value;
+     if(bal<12000000){ // ~0.012 SOL
+       note('Your wallet holds '+(bal/1e9).toFixed(4)+' SOL on <b>'+netName+'</b>, which isn\'t enough for the on-chain subscribe (network fee + account rent). '+
+         (netName==='devnet'
+           ? 'Grab free devnet SOL: open <a href="https://faucet.solana.com" target="_blank">faucet.solana.com</a>, choose <b>Devnet</b>, paste <code>'+pubkey+'</code>, then click Go live again. (Make sure Phantom is also set to Devnet.)'
+           : 'Add ~0.02 SOL to <code>'+pubkey+'</code> (or switch the dropdown to devnet and use the free faucet), then click Go live again.'));
+       setState('Wallet '+pubkey.slice(0,4)+'…'+pubkey.slice(-4),false); return;
+     }
+     const wallet={publicKey:resp.publicKey,signTransaction:provider.signTransaction.bind(provider),signAllTransactions:provider.signAllTransactions?provider.signAllTransactions.bind(provider):undefined,signMessage:provider.signMessage.bind(provider)};
+     const aProvider=new anchor.AnchorProvider(connection,wallet,{commitment:'confirmed'});
+     const program=await anchor.Program.at(new web3.PublicKey(cfg.programId),aProvider); // IDL fetched on-chain
+
+     // PDAs + ATAs
+     const spl=await import('https://esm.sh/@solana/spl-token@0.4.8');
+     const mint=new web3.PublicKey(cfg.mint), prog=program.programId;
+     const [treasuryPda]=web3.PublicKey.findProgramAddressSync([new TextEncoder().encode('token_treasury_v2')],prog);
+     const treasuryVault=spl.getAssociatedTokenAddressSync(mint,treasuryPda,true,spl.TOKEN_2022_PROGRAM_ID,spl.ASSOCIATED_TOKEN_PROGRAM_ID);
+     const [pricingPda]=web3.PublicKey.findProgramAddressSync([new TextEncoder().encode('pricing_matrix')],prog);
+     const userAta=spl.getAssociatedTokenAddressSync(mint,resp.publicKey,false,spl.TOKEN_2022_PROGRAM_ID,spl.ASSOCIATED_TOKEN_PROGRAM_ID);
+
+     // The program expects the user's TxL token account to already exist. A fresh wallet has none,
+     // so create it (idempotently) in the same transaction before subscribing.
+     const preIx=[];
+     var ataInfo=null; try{ ataInfo=await connection.getAccountInfo(userAta); }catch(e){}
+     if(!ataInfo){
+       note('Creating your TxL token account, then subscribing…');
+       preIx.push(spl.createAssociatedTokenAccountIdempotentInstruction(
+         resp.publicKey, userAta, resp.publicKey, mint, spl.TOKEN_2022_PROGRAM_ID, spl.ASSOCIATED_TOKEN_PROGRAM_ID));
+     }
+
+     const txSig=await program.methods.subscribe(cfg.service,4).accounts({
+       user:resp.publicKey,pricingMatrix:pricingPda,tokenMint:mint,userTokenAccount:userAta,
+       tokenTreasuryVault:treasuryVault,tokenTreasuryPda:treasuryPda,
+       tokenProgram:spl.TOKEN_2022_PROGRAM_ID,associatedTokenProgram:spl.ASSOCIATED_TOKEN_PROGRAM_ID,systemProgram:web3.SystemProgram.programId
+     }).preInstructions(preIx).rpc();
+     note('Subscribed on-chain (<a href="https://solscan.io/tx/'+txSig+'" target="_blank">'+txSig.slice(0,8)+'…</a>). Activating your API token…');
+
+     // Activate
+     const apiBase=cfg.apiOrigin+'/api';
+     const jwt=(await (await fetch(cfg.apiOrigin+'/auth/guest/start',{method:'POST'})).json()).token;
+     const msg=new TextEncoder().encode(txSig+'::'+jwt);
+     const sig=await provider.signMessage(msg,'utf8');
+     const sigBytes=sig.signature||sig;
+     const walletSignature=btoa(String.fromCharCode.apply(null,sigBytes));
+     const actResp=await fetch(apiBase+'/token/activate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+jwt},body:JSON.stringify({txSig:txSig,walletSignature:walletSignature,leagues:[]})});
+     const actText=(await actResp.text()).trim();
+     if(!actResp.ok) throw new Error('activation '+actResp.status+': '+actText.slice(0,140));
+     // The activate endpoint returns the API token as a plain string (or sometimes JSON) — handle both.
+     let apiToken; try{ const j=JSON.parse(actText); apiToken=j.token||j.apiToken||j; }catch(e){ apiToken=actText.replace(/^"|"$/g,''); }
+     creds={jwt:jwt,apiToken:apiToken,apiBase:apiBase};
+     setState('◎ Live · TxLINE',true);
+     note('✓ Live on TxLINE. Fixtures, scores and odds now stream from the verified feed. Every result is anchored on Solana.');
+     await refresh();
+   }catch(e){
+     setState('Demo mode',false);
+     note('Could not go live: '+(e&&e.message?e.message:e)+'.<br>You may need SOL on the selected network, a wallet on the same network, or to run this page from <code>http://localhost</code> (browsers block API calls from <code>file://</code>). Demo mode still works fully.');
+   }
+ }
+
+ // Reconcile TxLINE feed names with our team names.
+ const ALIAS={'ivory coast':"côte d'ivoire",'usa':'united states','cape verde':'cabo verde',
+   'bosnia & herzegovina':'bosnia-herzegovina','bosnia and herzegovina':'bosnia-herzegovina','dr congo':'congo dr'};
+ function canon(n){ var k=((''+(n||'')).trim()).toLowerCase(); return ALIAS[k]||k; }
+ function sameTeam(a,b){ return a&&b&&canon(a)===canon(b); }
+
+ // Parse a /scores/snapshot event array -> final result. Real TxLINE soccer shape: an array of
+ // event records; the `game_finalised` event carries the final Stats. Stat keys 1/2 = Participant1/2
+ // total goals, 6001/6002 = penalty-shootout goals.
+ function parseScore(payload){
+   var arr=Array.isArray(payload)?payload:(payload&&(payload.items||payload.data))||[];
+   var finalRec=null, latest=null, latestTs=-1, ended=false;
+   arr.forEach(function(e){ if(!e)return;
+     if(e.Action==='game_finalised'&&e.Stats) finalRec=e;
+     if(e.StatusId===5||(e.Data&&e.Data.StatusId===5)) ended=true;
+     var ts=e.Ts||0; if(e.Stats&&e.Stats['1']!=null&&ts>latestTs){ latestTs=ts; latest=e; }
+   });
+   var rec=finalRec||latest; if(!rec||!rec.Stats)return null;
+   var st=rec.Stats, res={ga:+st['1']||0, gb:+st['2']||0};
+   if(st['6001']!=null&&st['6002']!=null&&((+st['6001'])||(+st['6002']))){ res.pa=+st['6001']; res.pb=+st['6002']; }
+   return {res:res, finished:(!!finalRec||ended)};
+ }
+
+ let fixCache={};
+ const SAMPLE={fixtures:null,scores:null,odds:null}; // raw payloads captured live, for debugging field shapes
+ // Parse a StablePrice odds snapshot -> advance probability for slot a/b. Real TxLINE shape:
+ // SuperOddsType "1X2_PARTICIPANT_RESULT" with PriceNames [part1,draw,part2] and demargined Pct[].
+ // The draw share is split between the two sides by relative 90-min strength (knockout advance prob).
+ function parseMatchOdds(payload,mid){
+   var arr=Array.isArray(payload)?payload:(payload&&(payload.items||payload.data))||[], full=null, anym=null;
+   for(var i=0;i<arr.length;i++){ var x=arr[i];
+     if(!x||!/1X2/i.test(x.SuperOddsType||'')||!x.PriceNames)continue;
+     var pn={}; x.PriceNames.forEach(function(nm,ix){pn[nm]=ix;});
+     var v1=x.Pct&&x.Pct[pn.part1], v2=x.Pct&&x.Pct[pn.part2];
+     if(v1==null||v1==='NA'||v2==null||v2==='NA')continue;   // must be actually priced
+     if(!x.MarketPeriod){ full=x; break; }                   // full-match 1X2 (best) — use it
+     if(!anym) anym=x;                                        // else keep a period market (e.g. half=1) as fallback
+   }
+   var e=full||anym; if(!e)return null;   // draw-split below recovers a similar advance % from a half line
+   var idx={}; e.PriceNames.forEach(function(nm,i){idx[nm]=i;});
+   function pctOf(nm){ var i=idx[nm]; if(i==null)return null; var v=e.Pct&&e.Pct[i]; if(v==null||v==='NA')return null; var n=parseFloat(v); return isNaN(n)?null:n/100; }
+   var p1=pctOf('part1'), pd=pctOf('draw'), p2=pctOf('part2');
+   if(p1==null||p2==null)return null;
+   var d=pd||0, base=(p1+p2)||1, pa=p1+d*(p1/base), pb=p2+d*(p2/base), tot=(pa+pb)||1; pa/=tot; pb/=tot;
+   // part1 = Participant1 (home). Our bracket lists the home side as slot a, so default part1 -> a,
+   // but confirm/swap via the fixture's participant name when we have it.
+   var f=fixCache[FIXID[mid]], m=BR[mid], p1name=f?f.Participant1:null;
+   if(sameTeam(p1name,resolveOff(m.b)||slotTeam(m.b)))return {a:pb,b:pa};
+   return {a:pa,b:pb};
+ }
+ async function loadOdds(){
+   var ids=Object.keys(FIXID);
+   Object.keys(MKT_MATCH).forEach(function(mid){ if(offWinner(mid))delete MKT_MATCH[mid]; }); // drop decided games
+   for(var i=0;i<ids.length;i++){ var mid=ids[i]; if(offWinner(mid))continue; // only games not yet decided
+     try{ var rawOd=await apiGet('/odds/snapshot/'+FIXID[mid]);
+       if(rawOd){ if(!SAMPLE.odds||SAMPLE.odds.constructor!==Object)SAMPLE.odds={}; if(Object.keys(SAMPLE.odds).length<6)SAMPLE.odds[mid]={fixtureId:FIXID[mid],data:rawOd}; }
+       var pr=parseMatchOdds(rawOd,mid);
+       if(pr)MKT_MATCH[mid]=pr; // keep last-known full-match odds if this snapshot's buffer lacks them
+     }catch(e){} }
+ }
+
+ async function apiGet(path){ if(!creds)return null;
+   var r=await fetch(creds.apiBase+path,{headers:{'Authorization':'Bearer '+creds.jwt,'X-Api-Token':creds.apiToken}});
+   if(r.status===401){ try{ creds.jwt=(await (await fetch(net().apiOrigin+'/auth/guest/start',{method:'POST'})).json()).token;
+     r=await fetch(creds.apiBase+path,{headers:{'Authorization':'Bearer '+creds.jwt,'X-Api-Token':creds.apiToken}}); }catch(e){} }
+   if(!r.ok)return null; return r.json();
+ }
+
+ async function refresh(){
+   if(creds){
+     try{
+       // 1) fixtures snapshot -> map fixtureId to participant names + home/away designation
+       var fx=await apiGet('/fixtures/snapshot'), byId={};
+       (Array.isArray(fx)?fx:(fx&&(fx.items||fx.data))||[]).forEach(function(f){ if(f&&f.FixtureId!=null)byId[f.FixtureId]=f; });
+       fixCache=byId; SAMPLE.fixtures=(Array.isArray(fx)?fx.slice(0,2):fx);
+       // 2) walk matches in order so W-slots resolve as we go; fetch per-fixture verified scores
+       var ids=Object.keys(FIXID).sort(function(a,b){return(+a.slice(1))-(+b.slice(1));}), got=0;
+       for(var i=0;i<ids.length;i++){ var mid=ids[i], fid=FIXID[mid];
+         var rawSc=await apiGet('/scores/snapshot/'+fid);
+         if(!SAMPLE.scores&&rawSc){ var tr=(Array.isArray(rawSc)?rawSc:[]).map(function(x){var c=Object.assign({},x);delete c.Lineups;return c;}).filter(function(x){return x.Action==='game_finalised'||x.Action==='goal'||x.Action==='status';}).slice(0,6); SAMPLE.scores={match:mid,fixtureId:fid,data:tr}; }
+         var ps=parseScore(rawSc); if(!ps||!ps.finished)continue;
+         var st=ps.res, m=BR[mid], f=byId[fid], p1=f?f.Participant1:null;
+         var bName=resolveOff(m.b)||slotTeam(m.b), e;
+         if(sameTeam(p1,bName)){ e={ga:st.gb,gb:st.ga}; if(st.pa!=null){e.pa=st.pb;e.pb=st.pa;} } // Participant1 is our slot b -> swap
+         else { e={ga:st.ga,gb:st.gb}; if(st.pa!=null){e.pa=st.pa;e.pb=st.pb;} }               // default: Participant1 = slot a
+         // Knockout games can't end drawn: reject an undecided read so it can't erase a good result.
+         var decided=(e.ga!==e.gb)||(e.pa!=null&&e.pb!=null&&e.pa!==e.pb);
+         if(!decided)continue;
+         OFFICIAL[mid]=e; got++;
+       }
+       ADJ_CACHE=null;                      // new verified results -> recompute form-adjusted Elo
+       try{ await loadOdds(); }catch(e){}   // TxLINE odds -> per-match win % + Smart Picks market
+       save(); renderAll(); if(document.getElementById('modelBox').open)runModel();
+       document.getElementById('tickerMeta').textContent='✓ live from TxLINE · '+got+' results verified on-chain';
+       return;
+     }catch(e){ /* fall through to demo */ }
+   }
+   if(!Object.keys(OFFICIAL).length){ OFFICIAL=JSON.parse(JSON.stringify(OFFICIAL_SEED)); }
+   renderAll();
+ }
+ return {goLive:goLive,refresh:refresh,sample:function(){return SAMPLE;},creds:function(){return !!creds;}};
+})();
+function copySample(){
+  var s=(TXLINE.sample&&TXLINE.sample())||{};
+  var live=TXLINE.creds&&TXLINE.creds();
+  var out=JSON.stringify(s,function(k,v){return (v&&v.constructor===Object&&Object.keys(v).length>80)?'[large object]':v;},2);
+  var txt='TxLINE live='+(!!live)+'\n'+out;
+  if(navigator.clipboard) navigator.clipboard.writeText(txt);
+  var m=document.getElementById('copyMsg');
+  if(m){ m.textContent=live?'✓ Sample copied — paste it into your chat with Claude.':'Go live first (button turns green), then Refresh, then copy.'; setTimeout(function(){m.textContent='';},5000); }
+}
+</script>
+</body>
+</html>
