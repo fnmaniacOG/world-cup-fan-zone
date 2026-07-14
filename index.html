@@ -111,6 +111,17 @@
   .share{background:var(--panel2);border:1px dashed var(--border);border-radius:10px;padding:10px 12px;font:12.5px var(--mono);color:var(--text);margin-top:10px;white-space:pre-wrap}
   .foot{font-size:11px;color:var(--muted);text-align:center;margin:22px 0 6px;line-height:1.7}
   .foot b{color:var(--text)}
+  /* group stage */
+  .grpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .grpbox{background:var(--panel2);border:1px solid var(--border);border-radius:11px;padding:11px 13px}
+  .grpbox h4{margin:0 0 8px;font-size:13px;color:var(--blue);font-weight:700;letter-spacing:.3px}
+  .grow{display:flex;align-items:center;gap:6px;font:12px var(--mono);padding:3px 0}
+  .grow .gt{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .grow .gt.r{text-align:right}
+  .grow .gt.win{color:var(--green);font-weight:700}
+  .grow .gs{width:15px;text-align:center;color:var(--text)}
+  .grow .gd{color:var(--muted)}
+  .grow .gv{width:11px;color:#86efac;font-size:9px;text-align:center}
 </style>
 </head>
 <body>
@@ -182,6 +193,11 @@
       </thead><tbody id="priceBody"></tbody></table></div>
     </div>
   </details>
+
+  <div class="panel">
+    <h2>Group stage — final results <span class="pill" id="grpMeta">final results · <span style="color:#86efac">✓</span> = pulled live from TxLINE</span></h2>
+    <div class="grpgrid" id="groups"></div>
+  </div>
 
   <div class="foot">
     <b>How TxLINE powers this</b> — fixtures, live scores and odds come from the TxLINE World Cup feed; every packet is timestamped on <b>Solana</b> for a tamper-evident audit trail, so a result can't be faked. TxLINE is the primary data input for verification, result-locking, and the market line.<br>
@@ -422,7 +438,31 @@ function renderFan(){
    'Results verified on-chain by TxLINE ◎ #WorldCupFanZone';
  document.getElementById('shareCard').textContent=share;
 }
-function renderAll(){ renderTicker(); renderBracket(); renderFan(); }
+// ---- group stage ----
+const GROUPS_DEF={
+ A:['Mexico','Czechia','South Korea','South Africa'], B:['Switzerland','Canada','Bosnia-Herzegovina','Qatar'],
+ C:['Brazil','Morocco','Scotland','Haiti'], D:['United States','Türkiye','Australia','Paraguay'],
+ E:['Germany',"Côte d'Ivoire",'Ecuador','Curaçao'], F:['Netherlands','Japan','Sweden','Tunisia'],
+ G:['Belgium','Egypt','Iran','New Zealand'], H:['Spain','Uruguay','Cabo Verde','Saudi Arabia'],
+ I:['France','Norway','Senegal','Iraq'], J:['Argentina','Austria','Algeria','Jordan'],
+ K:['Portugal','Colombia','Congo DR','Uzbekistan'], L:['England','Croatia','Ghana','Panama']};
+const GRES={}; GROUP_GAMES.forEach(function(g){ GRES[g[0]+'|'+g[1]]={hg:g[2],ag:g[3]}; }); // results keyed home|away
+const GVERIFIED={}; let groupPulled=false;
+function groupResult(p,q){ if(GRES[p+'|'+q])return {gp:GRES[p+'|'+q].hg,gq:GRES[p+'|'+q].ag};
+ if(GRES[q+'|'+p])return {gp:GRES[q+'|'+p].ag,gq:GRES[q+'|'+p].hg}; return null; }
+function renderGroups(){
+ var el=document.getElementById('groups'); if(!el)return;
+ el.innerHTML=Object.keys(GROUPS_DEF).map(function(G){ var T=GROUPS_DEF[G], rows='';
+   for(var i=0;i<4;i++){ for(var j=i+1;j<4;j++){ var p=T[i],q=T[j], r=groupResult(p,q);
+     var gp=r?r.gp:'', gq=r?r.gq:'', pw=r&&r.gp>r.gq, qw=r&&r.gq>r.gp;
+     var v=(GVERIFIED[p+'|'+q]||GVERIFIED[q+'|'+p])?'<span class="gv">✓</span>':'<span class="gv"></span>';
+     rows+='<div class="grow"><span class="gt r'+(pw?' win':'')+'">'+p+'</span><span class="gs">'+gp+'</span><span class="gd">-</span><span class="gs">'+gq+'</span><span class="gt'+(qw?' win':'')+'">'+q+'</span>'+v+'</div>';
+   }}
+   return '<div class="grpbox"><h4>Group '+G+'</h4>'+rows+'</div>';
+ }).join('');
+ var m=document.getElementById('grpMeta'); if(m&&groupPulled)m.innerHTML='<span style="color:#86efac">✓ pulled live from TxLINE</span>';
+}
+function renderAll(){ renderTicker(); renderBracket(); renderFan(); renderGroups(); }
 
 /* ============================ ACTIONS ============================ */
 function pick(id,team){ PICKS[id]=team; save(); renderBracket(); renderFan(); }
@@ -626,7 +666,8 @@ const TXLINE=(function(){
 
  // Reconcile TxLINE feed names with our team names.
  const ALIAS={'ivory coast':"côte d'ivoire",'usa':'united states','cape verde':'cabo verde',
-   'bosnia & herzegovina':'bosnia-herzegovina','bosnia and herzegovina':'bosnia-herzegovina','dr congo':'congo dr'};
+   'bosnia & herzegovina':'bosnia-herzegovina','bosnia and herzegovina':'bosnia-herzegovina','dr congo':'congo dr',
+   'korea republic':'south korea','turkey':'türkiye','czech republic':'czechia'};
  function canon(n){ var k=((''+(n||'')).trim()).toLowerCase(); return ALIAS[k]||k; }
  function sameTeam(a,b){ return a&&b&&canon(a)===canon(b); }
 
@@ -674,6 +715,23 @@ const TXLINE=(function(){
    if(sameTeam(p1name,resolveOff(m.b)||slotTeam(m.b)))return {a:pb,b:pa};
    return {a:pa,b:pb};
  }
+ // Verify the 72 group-stage results against the TxLINE feed: match each game to its fixtureId
+ // (by participant names) and pull the finished score. Runs once, in parallel, non-blocking.
+ async function pullGroups(byId){
+   if(groupPulled||!byId)return;
+   var pf={}; Object.keys(byId).forEach(function(fid){ var f=byId[fid]; if(f&&f.Participant1&&f.Participant2) pf[canon(f.Participant1)+'|'+canon(f.Participant2)]=fid; });
+   var jobs=GROUP_GAMES.map(function(g){
+     var fid=pf[canon(g[0])+'|'+canon(g[1])]||pf[canon(g[1])+'|'+canon(g[0])]; if(!fid)return null;
+     return apiGet('/scores/snapshot/'+fid).then(function(raw){ var ps=parseScore(raw); if(!ps||!ps.finished)return;
+       var f=byId[fid], st=ps.res, hg, ag;
+       if(sameTeam(f.Participant1,g[0])){ hg=st.ga; ag=st.gb; } else { hg=st.gb; ag=st.ga; }
+       GRES[g[0]+'|'+g[1]]={hg:hg,ag:ag}; GVERIFIED[g[0]+'|'+g[1]]=1;
+     }).catch(function(){});
+   }).filter(Boolean);
+   if(!jobs.length)return;
+   await Promise.all(jobs); groupPulled=true; renderGroups();
+ }
+
  async function loadOdds(){
    var ids=Object.keys(FIXID);
    Object.keys(MKT_MATCH).forEach(function(mid){ if(offWinner(mid))delete MKT_MATCH[mid]; }); // drop decided games
@@ -716,6 +774,7 @@ const TXLINE=(function(){
        }
        ADJ_CACHE=null;                      // new verified results -> recompute form-adjusted Elo
        try{ await loadOdds(); }catch(e){}   // TxLINE odds -> per-match win % + Smart Picks market
+       pullGroups(byId);                    // verify group-stage results from TxLINE (non-blocking)
        save(); renderAll(); if(document.getElementById('modelBox').open)runModel();
        document.getElementById('tickerMeta').textContent='✓ live from TxLINE · '+got+' results verified on-chain';
        return;
