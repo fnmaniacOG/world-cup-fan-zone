@@ -716,13 +716,20 @@ const TXLINE=(function(){
  }
  // Verify the 72 group-stage results against the TxLINE feed: match each game to its fixtureId
  // (by participant names) and pull the finished score. Runs once, in parallel, non-blocking.
- async function pullGroups(byId){
-   if(groupPulled||!byId)return;
-   var pf={}; Object.keys(byId).forEach(function(fid){ var f=byId[fid]; if(f&&f.Participant1&&f.Participant2) pf[canon(f.Participant1)+'|'+canon(f.Participant2)]=fid; });
+ async function pullGroups(){
+   if(groupPulled)return;
+   // Completed group fixtures aren't in the default snapshot, so request the full World Cup
+   // competition list (id 72 seen on WC score records) to recover their fixtureIds.
+   var fx=null;
+   try{ fx=await apiGet('/fixtures/snapshot?competitionId=72'); }catch(e){}
+   if(!Array.isArray(fx)||fx.length<20){ try{ var a=await apiGet('/fixtures/snapshot'); if(Array.isArray(a))fx=a; }catch(e){} }
+   if(!Array.isArray(fx)||!fx.length)return;
+   var pf={}, byIdL={};
+   fx.forEach(function(f){ if(f&&f.FixtureId!=null){ byIdL[f.FixtureId]=f; if(f.Participant1&&f.Participant2) pf[canon(f.Participant1)+'|'+canon(f.Participant2)]=f.FixtureId; } });
    var jobs=GROUP_GAMES.map(function(g){
      var fid=pf[canon(g[0])+'|'+canon(g[1])]||pf[canon(g[1])+'|'+canon(g[0])]; if(!fid)return null;
      return apiGet('/scores/snapshot/'+fid).then(function(raw){ var ps=parseScore(raw); if(!ps||!ps.finished)return;
-       var f=byId[fid], st=ps.res, hg, ag;
+       var f=byIdL[fid], st=ps.res, hg, ag;
        if(sameTeam(f.Participant1,g[0])){ hg=st.ga; ag=st.gb; } else { hg=st.gb; ag=st.ga; }
        GRES[g[0]+'|'+g[1]]={hg:hg,ag:ag}; GVERIFIED[g[0]+'|'+g[1]]=1;
      }).catch(function(){});
@@ -773,7 +780,7 @@ const TXLINE=(function(){
        }
        ADJ_CACHE=null;                      // new verified results -> recompute form-adjusted Elo
        try{ await loadOdds(); }catch(e){}   // TxLINE odds -> per-match win % + Smart Picks market
-       pullGroups(byId);                    // verify group-stage results from TxLINE (non-blocking)
+       pullGroups();                        // verify group-stage results from TxLINE (non-blocking)
        save(); renderAll(); if(document.getElementById('modelBox').open)runModel();
        document.getElementById('tickerMeta').textContent='✓ live from TxLINE · '+got+' results verified on-chain';
        return;
