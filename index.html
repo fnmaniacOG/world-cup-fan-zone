@@ -323,7 +323,8 @@ const FIXID={
 let OFFICIAL={};        // verified results currently loaded (from TxLINE or demo seed)
 let PICKS={};           // user's predicted winner per match id -> team name
 let MKT_TX=null;        // TxLINE outright odds (title %) keyed by team, when live
-let MKT_MATCH={};       // TxLINE per-match advance probs: matchId -> {a,b}, when live
+let MKT_MATCH={};       // TxLINE per-match advance probs: matchId -> {a,b} (cached across sessions)
+let IS_LIVE=false;      // true only while connected to TxLINE — gates whether odds (green) are shown
 
 /* ============================ MODEL ============================ */
 function poisson(l){var L=Math.exp(-l),k=0,p=1;do{k++;p*=Math.random();}while(p>L);return k-1;}
@@ -343,7 +344,7 @@ function offLoser(id){ var w=offWinner(id); if(w==null)return null; var m=BR[id]
 function pickWinner(id){ var o=offWinner(id); if(o)return o; return PICKS[id]||null; }
 // Per-match win chance for the two current teams: TxLINE odds when live, else Elo expectancy.
 function matchProb(id){ var m=BR[id],a=slotTeam(m.a),b=slotTeam(m.b); if(!a||!b)return null;
- if(MKT_MATCH[id]&&MKT_MATCH[id].a!=null)return MKT_MATCH[id];
+ if(IS_LIVE&&MKT_MATCH[id]&&MKT_MATCH[id].a!=null)return MKT_MATCH[id]; // TxLINE odds only when connected
  var pa=1/(1+Math.pow(10,-(elo(a)-elo(b))/400)); return {a:pa,b:1-pa}; }
 function slotTeam(slot){ if(slot==null)return null; var c=slot[0];
  if(c==='W')return pickWinner('M'+slot.slice(1)); if(c==='L'){var w=pickWinner('M'+slot.slice(1)); if(!w)return null; var m=BR['M'+slot.slice(1)]; var a=slotTeam(m.a),b=slotTeam(m.b); return w===a?b:a;} return slot; }
@@ -374,7 +375,7 @@ function teamRow(id,side){
  if(off!=null&&pick===off&&name===off)cls+=' correct';
  var sc;
  if(g!=null){ sc='<span class="kbsc">'+g+((side==='a'?s.pa:s.pb)!=null?' ('+(side==='a'?s.pa:s.pb)+')':'')+'</span>'; }
- else { var mp=(off==null)?matchProb(id):null; var tx=!!(MKT_MATCH[id]&&MKT_MATCH[id].a!=null);
+ else { var mp=(off==null)?matchProb(id):null; var tx=!!(IS_LIVE&&MKT_MATCH[id]&&MKT_MATCH[id].a!=null);
    sc = mp?('<span class="kbodds'+(tx?' tx':'')+'" title="'+(tx?'live TxLINE odds':'form-adjusted model')+'">'+Math.round((side==='a'?mp.a:mp.b)*100)+'%</span>'):''; }
  var click = name && off==null ? ' onclick="pick(\''+id+'\',\''+(name||'').replace(/'/g,"\\'")+'\')"' : '';
  return '<div class="'+cls+'"'+click+'>'+
@@ -507,8 +508,8 @@ function runModel(){
  var t0=Date.now(), c=simForward(N), alive=aliveTeams();
  // market: TxLINE outright odds > TxLINE per-match odds (propagated) > editable prices
  var pxSum, mkt={};
- if(MKT_TX){ var s=alive.reduce(function(a,n){return a+(MKT_TX[n]||0);},0)||1; alive.forEach(function(n){mkt[n]=(MKT_TX[n]||0)/s*100;}); document.getElementById('mktSrc').textContent='(TxLINE odds)'; }
- else if(Object.keys(MKT_MATCH).length){ var mt=simMarket(N), s2=alive.reduce(function(a,n){return a+(mt[n]||0);},0)||1; alive.forEach(function(n){mkt[n]=(mt[n]||0)/s2*100;}); document.getElementById('mktSrc').textContent='(TxLINE odds)'; }
+ if(IS_LIVE&&MKT_TX){ var s=alive.reduce(function(a,n){return a+(MKT_TX[n]||0);},0)||1; alive.forEach(function(n){mkt[n]=(MKT_TX[n]||0)/s*100;}); document.getElementById('mktSrc').textContent='(TxLINE odds)'; }
+ else if(IS_LIVE&&Object.keys(MKT_MATCH).length){ var mt=simMarket(N), s2=alive.reduce(function(a,n){return a+(mt[n]||0);},0)||1; alive.forEach(function(n){mkt[n]=(mt[n]||0)/s2*100;}); document.getElementById('mktSrc').textContent='(TxLINE odds)'; }
  else { pxSum=alive.reduce(function(a,n){var t=TEAMS.find(x=>x.name===n);return a+(t?+t.px:0);},0)||1; alive.forEach(function(n){var t=TEAMS.find(x=>x.name===n);mkt[n]=(t?+t.px:0)/pxSum*100;}); document.getElementById('mktSrc').textContent='(your prices)'; }
  var rows=alive.map(function(n){ var title=(c.title[n]||0)/N*100;
    return {name:n,r16:(c.r16[n]||0)/N*100,qf:(c.qf[n]||0)/N*100,sf:(c.sf[n]||0)/N*100,final:(c.fin[n]||0)/N*100,title:title,mkt:mkt[n]||0,edge:title-(mkt[n]||0)};
@@ -655,6 +656,7 @@ const TXLINE=(function(){
      // The activate endpoint returns the API token as a plain string (or sometimes JSON) — handle both.
      let apiToken; try{ const j=JSON.parse(actText); apiToken=j.token||j.apiToken||j; }catch(e){ apiToken=actText.replace(/^"|"$/g,''); }
      creds={jwt:jwt,apiToken:apiToken,apiBase:apiBase};
+     IS_LIVE=true; renderBracket();        // switch odds on — cached TxLINE odds go green instantly
      setState('◎ Live · TxLINE',true);
      note('✓ Live on TxLINE. Fixtures, scores and odds now stream from the verified feed. Every result is anchored on Solana.');
      await refresh();
