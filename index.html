@@ -194,7 +194,7 @@
   </details>
 
   <div class="panel">
-    <h2>Group stage — final results <span class="pill" id="grpMeta">final results · <span style="color:#86efac">✓</span> = pulled live from TxLINE</span></h2>
+    <h2>Group stage — final results</h2>
     <div class="grpgrid" id="groups"></div>
   </div>
 
@@ -460,7 +460,6 @@ function renderGroups(){
    }}
    return '<div class="grpbox"><h4>Group '+G+'</h4>'+rows+'</div>';
  }).join('');
- var m=document.getElementById('grpMeta'); if(m&&groupPulled)m.innerHTML='<span style="color:#86efac">✓ pulled live from TxLINE</span>';
 }
 function renderAll(){ renderTicker(); renderBracket(); renderFan(); renderGroups(); }
 
@@ -783,7 +782,6 @@ const TXLINE=(function(){
        }
        ADJ_CACHE=null;                      // new verified results -> recompute form-adjusted Elo
        try{ await loadOdds(); }catch(e){}   // TxLINE odds -> per-match win % + Smart Picks market
-       pullGroups();                        // verify group-stage results from TxLINE (non-blocking)
        save(); renderAll(); if(document.getElementById('modelBox').open)runModel();
        document.getElementById('tickerMeta').textContent='✓ live from TxLINE · '+got+' results verified on-chain';
        return;
