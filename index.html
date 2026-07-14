@@ -531,7 +531,7 @@ function buildPriceTable(){
 }
 
 /* ============================ PERSISTENCE ============================ */
-function stateObj(){ return {picks:PICKS, px:TEAMS.map(t=>t.px)}; } // results are NOT persisted (seed + live only)
+function stateObj(){ return {picks:PICKS, px:TEAMS.map(t=>t.px), mkt:MKT_MATCH}; } // results not persisted; TxLINE odds are (so green sticks)
 function save(){ var j; try{j=JSON.stringify(stateObj());}catch(e){return;}
  try{localStorage.setItem('wcfz',j);}catch(e){}
  try{history.replaceState(null,'','#'+encodeURIComponent(j));}catch(e){} }
@@ -541,6 +541,7 @@ function load(){ var s=null;
  if(!s)return; var o; try{o=JSON.parse(s);}catch(e){return;}
  if(o.picks)PICKS=o.picks;
  if(o.px)o.px.forEach(function(p,i){if(TEAMS[i])TEAMS[i].px=p;});
+ if(o.mkt&&typeof o.mkt==='object')MKT_MATCH=o.mkt; // restore last-known TxLINE odds so green persists
 }
 
 /* ============================ INIT ============================ */
