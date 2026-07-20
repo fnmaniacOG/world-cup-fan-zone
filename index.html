@@ -149,7 +149,7 @@
         <button class="btn ghost sm" onclick="copySample()">⧉ Copy TxLINE sample (all remaining games)</button>
       </div>
     </div>
-    <div class="note" id="connNote">Runs in <b>demo mode</b> with the real 2026 results through the <b>third-place playoff</b> (as of Jul 18) so you can try everything instantly — only the <b>Final</b> (Spain vs Argentina) is left to call. Click <b>Go live with TxLINE</b> to connect a Solana wallet, subscribe to the free World Cup tier, and pull cryptographically-verified scores straight from the TxLINE feed (real fixtureIds already mapped).</div>
+    <div class="note" id="connNote">Runs in <b>demo mode</b> with the <b>complete</b> real 2026 results — <b>Spain</b> beat Argentina 1-0 in the Final to win the World Cup. Every result is pre-loaded and your picks are scored against them. Click <b>Go live with TxLINE</b> to connect a Solana wallet, subscribe to the free World Cup tier, and pull the same scores cryptographically-verified straight from the TxLINE feed.</div>
   </div>
 
   <div class="panel">
@@ -297,7 +297,7 @@ const BR={
 const R32=['M73','M74','M75','M76','M77','M78','M79','M80','M81','M82','M83','M84','M85','M86','M87','M88'];
 const R16=['M89','M90','M91','M92','M93','M94','M95','M96'];
 const QF=['M97','M98','M99','M100'], SF=['M101','M102'], FIN=['M104'];
-const ROUNDPTS={R32:1,R16:2,QF:3,SF:5,Final:8};
+const ROUNDPTS={R32:1,R16:2,QF:3,SF:5,'3rd':3,Final:8};
 function roundOf(id){ if(R32.includes(id))return'R32'; if(R16.includes(id))return'R16'; if(QF.includes(id))return'QF'; if(SF.includes(id))return'SF'; if(id==='M104')return'Final'; return'3rd'; }
 
 // OFFICIAL = TxLINE-verified real results (demo seed = actual 2026 scores through R16, as of Jul 6).
@@ -311,8 +311,8 @@ const OFFICIAL_SEED={
  M94:{ga:1,gb:4},M95:{ga:3,gb:2},M96:{ga:0,gb:0,pa:4,pb:3},
  // Quarter-finals
  M97:{ga:2,gb:0},M98:{ga:2,gb:1},M99:{ga:1,gb:2},M100:{ga:3,gb:1},
- // Semi-finals + third place (as of Jul 18, 2026) — only the Final (M104) remains
- M101:{ga:0,gb:2},M102:{ga:1,gb:2},M103:{ga:4,gb:6}
+ // Semi-finals, third place, and Final — tournament complete (Spain champions)
+ M101:{ga:0,gb:2},M102:{ga:1,gb:2},M103:{ga:4,gb:6},M104:{ga:1,gb:0}
 };
 // Real TxLINE fixtureIds (from the TxLINE World Cup schedule feed) -> our FIFA match numbers.
 // Used in live mode to fetch /api/scores/snapshot/{fixtureId} and verify results on-chain.
@@ -355,7 +355,7 @@ function slotTeam(slot){ if(slot==null)return null; var c=slot[0];
 function scorePicks(){
  var pts=0,correct=0,decided=0,best=null,bestPts=0;
  Object.keys(BR).forEach(function(id){
-   if(id==='M103')return; var w=offWinner(id); if(!w)return; // only verified games count
+   var w=offWinner(id); if(!w)return; // only verified games count
    var pick=PICKS[id]; if(pick==null)return; decided++;
    if(pick===w){ var p=ROUNDPTS[roundOf(id)]||1; pts+=p; correct++; if(p>=bestPts){bestPts=p;best={team:w,round:roundOf(id)};} }
  });
